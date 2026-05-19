@@ -10,6 +10,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.get('/', (req, res) => res.json({ status: 'Server is running!' }));
 
 // Routes
 app.use('/api/auth', authRoutes);
