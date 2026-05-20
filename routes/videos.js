@@ -104,4 +104,33 @@ router.put('/:id/view', auth, async (req, res) => {
   }
 });
 
+// Add to watch history
+router.post('/:id/watch', auth, async (req, res) => {
+  try {
+    const User = require('../models/User');
+    await User.findByIdAndUpdate(req.user.id, {
+      $addToSet: { watchHistory: req.params.id }
+    });
+    await Video.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } });
+    res.json({ message: 'Watch history updated' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Get watch history
+router.get('/history', auth, async (req, res) => {
+  try {
+    const User = require('../models/User');
+    const user = await User.findById(req.user.id)
+      .populate({
+        path: 'watchHistory',
+        populate: { path: 'uploader', select: 'name' }
+      });
+    res.json(user.watchHistory.reverse());
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;
