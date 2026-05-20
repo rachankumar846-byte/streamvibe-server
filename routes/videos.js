@@ -47,7 +47,11 @@ router.post('/', auth, upload.single('video'), async (req, res) => {
       title,
       description,
       videoUrl: req.file.path,
-      thumbnail: req.file.path.replace('/upload/', '/upload/so_0/'),
+      thumbnail: req.file.path
+  .replace('/upload/', '/upload/so_0,w_400,h_250,c_fill/')
+  .replace('.mp4', '.jpg')
+  .replace('.mov', '.jpg')
+  .replace('.avi', '.jpg'),
       uploader: req.user.id,
     });
 
