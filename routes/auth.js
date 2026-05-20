@@ -54,4 +54,44 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Follow/Unfollow user
+router.post('/follow/:id', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    const jwt = require('jsonwebtoken');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const userToFollow = await User.findById(req.params.id);
+    const currentUser = await User.findById(decoded.id);
+
+    if (!userToFollow || !currentUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isFollowing = currentUser.following.includes(req.params.id);
+
+    if (isFollowing) {
+      currentUser.following = currentUser.following.filter(
+        id => id.toString() !== req.params.id
+      );
+      userToFollow.followers = userToFollow.followers.filter(
+        id => id.toString() !== decoded.id
+      );
+    } else {
+      currentUser.following.push(req.params.id);
+      userToFollow.followers.push(decoded.id);
+    }
+
+    await currentUser.save();
+    await userToFollow.save();
+
+    res.json({
+      following: !isFollowing,
+      followersCount: userToFollow.followers.length
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;
