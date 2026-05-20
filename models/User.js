@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema({
   avatar: { type: String, default: '' },
   followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  watchHistory: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Video' }],
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
