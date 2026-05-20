@@ -1,7 +1,8 @@
- const express = require('express');
+const express = require('express');
 const router = express.Router();
 const Video = require('../models/Video');
 const auth = require('../middleware/auth');
+const { cloudinary, upload } = require('../config/cloudinary');
 
 // Get all videos
 router.get('/', auth, async (req, res) => {
@@ -11,7 +12,8 @@ router.get('/', auth, async (req, res) => {
       .sort({ createdAt: -1 });
     res.json(videos);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    console.log('Get videos error:', err.message);
+    res.status(500).json({ message: err.message });
   }
 });
 
@@ -24,21 +26,36 @@ router.get('/search', auth, async (req, res) => {
     }).populate('uploader', 'name');
     res.json(videos);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: err.message });
   }
 });
 
 // Upload video
-router.post('/', auth, async (req, res) => {
+router.post('/', auth, upload.single('video'), async (req, res) => {
   try {
-    const { title, description, videoUrl, thumbnail } = req.body;
+    console.log('Upload request received');
+    console.log('File:', req.file);
+    console.log('Body:', req.body);
+
+    const { title, description } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'No video file uploaded' });
+    }
+
     const video = await Video.create({
-      title, description, videoUrl, thumbnail,
+      title,
+      description,
+      videoUrl: req.file.path,
+      thumbnail: req.file.path.replace('/upload/', '/upload/so_0/'),
       uploader: req.user.id,
     });
+
+    console.log('Video created:', video._id);
     res.status(201).json(video);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    console.log('Upload error:', err.message);
+    res.status(500).json({ message: err.message });
   }
 });
 
@@ -56,7 +73,7 @@ router.post('/:id/like', auth, async (req, res) => {
     await video.save();
     res.json({ likes: video.likes.length, liked: !liked });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: err.message });
   }
 });
 
@@ -69,7 +86,7 @@ router.post('/:id/comment', auth, async (req, res) => {
     await video.save();
     res.json(video.comments);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: err.message });
   }
 });
 
@@ -79,7 +96,7 @@ router.put('/:id/view', auth, async (req, res) => {
     await Video.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } });
     res.json({ message: 'View counted' });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: err.message });
   }
 });
 
