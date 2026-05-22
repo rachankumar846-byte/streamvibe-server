@@ -133,4 +133,24 @@ router.get('/history', auth, async (req, res) => {
   }
 });
 
+// Delete video
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const video = await Video.findById(req.params.id);
+    if (!video) return res.status(404).json({ message: 'Video not found' });
+
+    if (video.uploader.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    const publicId = video.videoUrl.split('/').pop().split('.')[0];
+    await cloudinary.uploader.destroy(`streamvibe/${publicId}`, { resource_type: 'video' });
+
+    await Video.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Video deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;
